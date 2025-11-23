@@ -1,0 +1,12 @@
+torch
+torch-scatter
+torch-sparse
+torch-geometric
+pandas
+numpy
+scikit-learn
+xgboost
+matplotlib
+seaborn
+tqdm
+scikit-image
