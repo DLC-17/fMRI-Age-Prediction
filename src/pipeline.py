@@ -1,10 +1,17 @@
 import argparse
+import os
+import sys
+
+# Ensure the root project directory is in the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.extract import load_data
 from src.transform import apply_pca, apply_smote
+from sklearn.model_selection import train_test_split
 
 
 def main():
-    parser = argparse.ArgumentParser(description="fMRI Age Prediction Pipeline")
+    parser = argparse.ArgumentParser(description="WiDS ADHD Prediction Pipeline")
 
     parser.add_argument(
         "--stage",
@@ -14,29 +21,51 @@ def main():
         help="Pipeline stage to execute.",
     )
     parser.add_argument(
-        "--data-dir", type=str, default="data/", help="Directory containing the data."
+        "--data-dir", type=str, default="data/wids2025/", help="Directory containing the WiDS dataset."
     )
 
     args = parser.parse_args()
 
     if args.stage in ["extract", "all"]:
         print("Running extraction...")
-        data, ids = load_data(args.data_dir)
-        print(f"Extraction complete. Loaded {len(ids)} subjects with {data.shape[1]} features each.")
+        X, y, ids = load_data(args.data_dir)
+        print(f"Extraction complete. Loaded {len(ids)} subjects with {X.shape[1]} features each.")
+        print(f"Target distribution (ADHD Outcome): {sum(y)} Positive, {len(y) - sum(y)} Negative")
 
     if args.stage in ["transform", "all"]:
         print("Running transformation...")
         if args.stage != "all":
-            data, ids = load_data(args.data_dir)
-        X_train_pca, _, pca = apply_pca(data, None, n_components=40)
-        print(f"Transformation complete. Reduced to {X_train_pca.shape[1]} PCA components.")
+            X, y, ids = load_data(args.data_dir)
+            
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        
+        # PCA Dimensionality reduction
+        X_train_pca, X_test_pca, pca = apply_pca(X_train, X_test, n_components=40)
+        
+        # SMOTE Balancing
+        X_train_bal, y_train_bal = apply_smote(X_train_pca, y_train)
+        
+        print(f"Transformation complete. Reduced to {X_train_bal.shape[1]} PCA components.")
+        print(f"Balanced training set has {len(y_train_bal)} samples.")
 
     if args.stage in ["train", "all"]:
         print("Running training...")
+        if args.stage != "all":
+            print("Please run with --stage all to pass data through the pipeline.")
+            return
+            
         from src.train import train_xgboost, evaluate_model
 
-        print("Training complete.")
-
+        model = train_xgboost(X_train_bal, y_train_bal)
+        acc, auc = evaluate_model(model, X_test_pca, y_test)
+        
+        print(f"\n--- Final Results ---")
+        print(f"Accuracy: {acc:.4f}")
+        print(f"ROC AUC:  {auc:.4f}")
+        
+        # Save model for the API
+        model.save_model("xgboost_fmri.json")
+        print("Saved model to xgboost_fmri.json")
 
 if __name__ == "__main__":
     main()

@@ -2,30 +2,30 @@ import pandas as pd
 import numpy as np
 import os
 
-def extract_upper_triangle(file_path):
-    """
-    Extracts the upper triangle of a correlation matrix from a TSV file.
-    """
-    matrix = pd.read_csv(file_path, sep='\t', header=None).values
-    # Get the upper triangle excluding the diagonal
-    upper_triangle = matrix[np.triu_indices(matrix.shape[0], k=1)]
-    return upper_triangle
-
 def load_data(data_dir):
     """
-    Loads all TSV files in a directory and extracts upper triangles.
-    Returns a list of vectors and a list of participant IDs.
+    Loads the functional connectome matrices and corresponding ADHD labels 
+    from the WiDS Datathon 2025 dataset.
     """
-    vectors = []
-    ids = []
-    for filename in os.listdir(data_dir):
-        if filename.endswith(".tsv"):
-            file_path = os.path.join(data_dir, filename)
-            vector = extract_upper_triangle(file_path)
-            vectors.append(vector)
-            
-            # Assuming filename is something like 'sub-001.tsv'
-            participant_id = filename.split('.')[0]
-            ids.append(participant_id)
-            
-    return np.array(vectors), ids
+    print("Loading connectome features...")
+    features_file = os.path.join(data_dir, "TRAIN_NEW", "TRAIN_FUNCTIONAL_CONNECTOME_MATRICES_new_36P_Pearson.csv")
+    features_df = pd.read_csv(features_file)
+    
+    print("Loading solutions (labels)...")
+    labels_file = os.path.join(data_dir, "TRAIN_NEW", "TRAINING_SOLUTIONS.xlsx")
+    labels_df = pd.read_excel(labels_file)
+    
+    # Merge on participant_id to ensure exact alignment
+    merged_df = features_df.merge(labels_df, on="participant_id", how="inner")
+    
+    # Extract IDs, Features, and Target (ADHD Outcome)
+    ids = merged_df["participant_id"].values
+    
+    # Target variable
+    y = merged_df["ADHD_Outcome"].values
+    
+    # Everything else except ID and solution columns are features
+    feature_cols = [c for c in merged_df.columns if c not in ["participant_id", "ADHD_Outcome", "Sex_F"]]
+    X = merged_df[feature_cols].values
+    
+    return X, y, ids
