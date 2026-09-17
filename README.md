@@ -45,12 +45,14 @@ Feature Importance: Frontal and limbic connectivity emerged as key predictors, c
 
 This repository serves as a fully containerized, scalable ETL/MLOps portfolio project deployed exclusively on free-tier and developer-focused cloud platforms.
 
+**[🌟 Live API Documentation (Swagger UI)](https://fmri-api-883088739263.us-central1.run.app/docs)**
+
 *   **Data Storage:** Google Cloud Storage (GCS) single-region free tier.
 *   **Data Warehouse:** Google BigQuery (Free tier).
 *   **Data Processing:** Apache Spark (PySpark) for distributed PCA and data balancing.
 *   **Orchestration:** Apache Airflow DAGs (Local/Docker) & GitHub Actions (Live execution).
 *   **MLOps & Tracking:** MLflow integrated with DagsHub (Free remote tracking server).
-*   **Model Serving:** FastAPI REST API, Dockerized and deployed via Hugging Face Spaces.
+*   **Model Serving:** FastAPI REST API, Dockerized and deployed via **Google Cloud Run**.
 *   **Infrastructure as Code (IaC):** Terraform.
 *   **CI/CD & Testing:** GitHub Actions enforcing `black`, `ruff`, and comprehensive `pytest` suites.
 
