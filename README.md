@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project investigates how resting-state functional magnetic resonance imaging (fMRI) data can be used to predict chronological age in a pediatric cohort. Using the Healthy Brain Network dataset, we developed a machine learning pipeline that addresses dataset imbalances, high-dimensional connectivity features, and biases toward younger ages.
+This project investigates how resting-state functional magnetic resonance imaging (fMRI) data can be used to predict chronological age in a pediatric cohort. Using the [Healthy Brain Network (HBN) dataset](http://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/index.html), we developed a machine learning pipeline that addresses dataset imbalances, high-dimensional connectivity features, and biases toward younger ages.
 
 Our final optimized XGBoost model achieved strong predictive performance across all age groups, providing insights into neurodevelopmental patterns such as functional frontalization and the role of frontal–limbic connectivity.
 
@@ -47,6 +47,7 @@ This repository serves as a fully containerized, scalable ETL/MLOps portfolio pr
 
 **[🌟 Live API Documentation (Swagger UI)](https://fmri-api-883088739263.us-central1.run.app/docs)**
 
+*   **Data Source:** [Healthy Brain Network (HBN)](http://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/index.html) dataset, an open-resource pediatric resting-state fMRI dataset.
 *   **Data Storage:** Google Cloud Storage (GCS) single-region free tier.
 *   **Data Warehouse:** Google BigQuery (Free tier).
 *   **Data Processing:** Apache Spark (PySpark) for distributed PCA and data balancing.
