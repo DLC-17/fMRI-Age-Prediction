@@ -12,6 +12,9 @@ COPY requirements_api.txt .
 RUN pip install --no-cache-dir -r requirements_api.txt
 COPY api/ api/
 COPY src/ src/
+COPY xgboost_fmri.json .
+
+ENV MODEL_PATH="xgboost_fmri.json"
 
 EXPOSE 8080
 
