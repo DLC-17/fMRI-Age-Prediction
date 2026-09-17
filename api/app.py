@@ -2,12 +2,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 import uvicorn
-import mlflow
+import os
 
 app = FastAPI(title="fMRI Age Prediction API", version="1.0.0")
 
 model = None
-MODEL_URI = "models:/xgboost_fmri/Production"
 
 class PredictionRequest(BaseModel):
     features: list[float]
@@ -15,22 +14,29 @@ class PredictionRequest(BaseModel):
 @app.on_event("startup")
 def load_model():
     global model
-    try:
-        model = mlflow.pyfunc.load_model(MODEL_URI)
-        print(f"Loaded model from {MODEL_URI}")
-    except Exception as e:
-        print(f"Failed to load MLflow model on startup: {e}")
-        # Note: in a real deployment, we might fail to start up if model is missing.
-        # We catch it here so the API can still launch for testing without an active MLflow tracking server.
+    model_path = os.getenv("MODEL_PATH")
+    if model_path and os.path.exists(model_path):
+        try:
+            import xgboost as xgb
+            model = xgb.Booster()
+            model.load_model(model_path)
+            print(f"Loaded model from {model_path}")
+        except Exception as e:
+            print(f"Failed to load model: {e}")
+    else:
+        print("No model file found. API is running in demo mode.")
 
 @app.post("/predict")
 def predict(request: PredictionRequest):
     if model is None:
-        raise HTTPException(status_code=503, detail="Model is not loaded.")
-    
+        raise HTTPException(
+            status_code=503,
+            detail="Model is not loaded. Deploy a trained model file and set MODEL_PATH.",
+        )
+
     try:
-        # Assuming model expects a 2D array / DataFrame
-        X = pd.DataFrame([request.features])
+        import xgboost as xgb
+        X = xgb.DMatrix([request.features])
         pred = model.predict(X)
         return {"predicted_age": float(pred[0])}
     except Exception as e:
