@@ -4,9 +4,25 @@ import pandas as pd
 import uvicorn
 import os
 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+
 app = FastAPI(title="fMRI Age Prediction API", version="1.0.0")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model = None
+
+@app.get("/", include_in_schema=False)
+def root():
+    # Redirect base URL directly to the interactive documentation
+    return RedirectResponse(url="/docs")
 
 class PredictionRequest(BaseModel):
     features: list[float]

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fMRI Brain Age Predictor</title>
+    <!-- Tailwind CSS for sleek styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <h1 class="text-3xl font-bold mb-2">🧠 Brain Age Predictor</h1>
+            <p class="text-indigo-100">Predict chronological age from fMRI connectome matrices using XGBoost.</p>
+        </div>
+        
+        <div class="p-8 space-y-6">
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-slate-700">1. Generate Brain Scan</h2>
+                <p class="text-slate-500 text-sm">
+                    Because a functional connectome matrix has 19,900 distinct features, this UI generates a mock patient profile 
+                    (40 PCA components) to send to our live Cloud Run API.
+                </p>
+                
+                <div class="flex items-center space-x-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <label for="seed" class="font-medium text-slate-700 whitespace-nowrap">Patient ID (Seed):</label>
+                    <input type="range" id="seed" min="1" max="100" value="42" class="w-full accent-indigo-600" oninput="document.getElementById('seed-val').innerText = this.value">
+                    <span id="seed-val" class="font-bold text-indigo-600 w-8 text-center">42</span>
+                </div>
+                
+                <button id="predict-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex justify-center items-center">
+                    <span>Analyze Brain Scan</span>
+                </button>
+            </div>
+
+            <div class="border-t border-slate-200 pt-6">
+                <h2 class="text-xl font-semibold text-slate-700 mb-4">2. Prediction Results</h2>
+                
+                <div class="bg-slate-50 rounded-lg p-6 flex flex-col items-center justify-center border border-slate-200 min-h-[120px]">
+                    <div id="loading" class="hidden animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+                    <div id="result-age" class="text-4xl font-extrabold text-indigo-600 hidden"></div>
+                    <div id="placeholder" class="text-slate-400">Waiting for analysis...</div>
+                </div>
+                
+                <div id="log-container" class="mt-4 hidden">
+                    <p class="text-sm font-semibold text-slate-600 mb-1">API Log:</p>
+                    <pre id="log" class="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use a simple pseudo-random generator to mock NumPy's random.normal
+        // We just need it to be deterministic based on the seed.
+        function splitmix32(a) {
+            return function() {
+                a |= 0; a = a + 0x9e3779b9 | 0;
+                var t = a ^ a >>> 16; t = Math.imul(t, 0x21f0aaad);
+                t = t ^ t >>> 15; t = Math.imul(t, 0x735a2d97);
+                return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+            }
+        }
+
+        // Box-Muller transform for normal distribution
+        function randomNormal(rng) {
+            let u = 0, v = 0;
+            while(u === 0) u = rng(); // Converting [0,1) to (0,1)
+            while(v === 0) v = rng();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        document.getElementById('predict-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('predict-btn');
+            const loading = document.getElementById('loading');
+            const resultAge = document.getElementById('result-age');
+            const placeholder = document.getElementById('placeholder');
+            const logContainer = document.getElementById('log-container');
+            const log = document.getElementById('log');
+            const seed = parseInt(document.getElementById('seed').value);
+
+            // UI Loading State
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+            placeholder.classList.add('hidden');
+            resultAge.classList.add('hidden');
+            loading.classList.remove('hidden');
+            logContainer.classList.remove('hidden');
+            log.innerText = "Generating 40 mock PCA features...\n";
+
+            // Generate 40 mock features
+            const rng = splitmix32(seed);
+            const features = Array.from({length: 40}, () => randomNormal(rng));
+
+            // Call Cloud Run API
+            log.innerText += "Sending HTTP POST to Google Cloud Run...\n";
+            
+            try {
+                // Ensure this matches your ACTUAL Cloud Run deployment URL
+                const apiUrl = "https://fmri-api-883088739263.us-central1.run.app/predict";
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ features: features })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                log.innerText += "Response received successfully.\n";
+                resultAge.innerText = `${data.predicted_age.toFixed(1)} years old`;
+                
+                loading.classList.add('hidden');
+                resultAge.classList.remove('hidden');
+                
+            } catch (error) {
+                log.innerText += `ERROR: ${error.message}\nMake sure your Cloud Run API is deployed with the new CORS update!`;
+                loading.classList.add('hidden');
+                resultAge.innerText = "Error";
+                resultAge.classList.remove('hidden');
+                resultAge.classList.replace('text-indigo-600', 'text-red-600');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+            }
+        });
+    </script>
+</body>
+</html>
