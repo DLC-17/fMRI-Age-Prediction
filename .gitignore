@@ -5,4 +5,4 @@ __pycache__/
 .pytest_cache/
 *.json
 GEMINI.md
-xgboost_fmri.json
+!xgboost_fmri.json
