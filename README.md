@@ -2,9 +2,11 @@
 
 ## Overview
 
-This project investigates how resting-state functional magnetic resonance imaging (fMRI) data can be used to predict chronological age in a pediatric cohort. Using the Healthy Brain Network dataset, we developed a machine learning pipeline that addressed dataset imbalances, high-dimensional connectivity features, and biases toward younger ages.
+This project investigates how resting-state functional magnetic resonance imaging (fMRI) data can be used to predict chronological age in a pediatric cohort. Using the Healthy Brain Network dataset, we developed a machine learning pipeline that addresses dataset imbalances, high-dimensional connectivity features, and biases toward younger ages.
 
 Our final optimized XGBoost model achieved strong predictive performance across all age groups, providing insights into neurodevelopmental patterns such as functional frontalization and the role of frontal–limbic connectivity.
+
+**🚀 Data Engineering Upgrade:** The project was originally prototyped in Jupyter Notebooks. It has since been completely re-architected into a cloud data pipeline utilizing PySpark, Apache Airflow, Terraform, MLflow, and FastAPI.
 
 ## Key Contributions
 
@@ -37,78 +39,101 @@ Our final optimized XGBoost model achieved strong predictive performance across 
 
 Feature Importance: Frontal and limbic connectivity emerged as key predictors, consistent with developmental milestones.
 
-## Tech Stack
+---
 
-- **Language:** Python
-- **Data Handling:** numpy, pandas
-- **Machine Learning:** scikit-learn, xgboost
-- **Oversampling:** imblearn (SMOTE)
-- **Neuroimaging:** nibabel, nilearn
-- **Visualization:** matplotlib, seaborn, shap
+## 🏗️ Architecture
+
+This repository serves as a fully containerized, scalable ETL/MLOps portfolio project deployed exclusively on free-tier and developer-focused cloud platforms.
+
+*   **Data Storage:** Google Cloud Storage (GCS) single-region free tier.
+*   **Data Warehouse:** Google BigQuery (Free tier).
+*   **Data Processing:** Apache Spark (PySpark) for distributed PCA and data balancing.
+*   **Orchestration:** Apache Airflow DAGs (Local/Docker) & GitHub Actions (Live execution).
+*   **MLOps & Tracking:** MLflow integrated with DagsHub (Free remote tracking server).
+*   **Model Serving:** FastAPI REST API, Dockerized and deployed via Hugging Face Spaces.
+*   **Infrastructure as Code (IaC):** Terraform.
+*   **CI/CD & Testing:** GitHub Actions enforcing `black`, `ruff`, and comprehensive `pytest` suites.
 
 ## Project Structure
 
 ```
 fMRI-Age-Prediction/
-├── data/
-│   ├── metadata/                        # CSV files with participant age metadata
-│   │   ├── training_metadata.csv
-│   │   ├── test_metadata.csv
-│   │   └── code-test.csv
-│   ├── train_tsv/                       # Training functional connectivity TSV files
-│   │   └── sub-[Patient_ID].tsv
-│   └── test_tsv/                        # Test functional connectivity TSV files
-│       └── sub-[Patient_ID].tsv
-├── docs/
-│   ├── capstone_article.pdf             # Written capstone report
-│   └── presentation.pdf                 # Project presentation slides
-├── notebooks/                           # Jupyter notebooks in development order
-│   ├── 01_tsv_generation.ipynb          # Merge raw TSV files; generate synthetic data by age bin
-│   ├── 02_initial_pca_model.ipynb       # First model: PCA dimensionality reduction + baseline ML
-│   ├── 03_rf_xgboost_ensemble.ipynb     # RF + XGBoost ensemble with Ridge regression and bias correction
-│   ├── 04_synthetic_data_model.ipynb    # Model trained with synthetic data augmentation
-│   ├── 05_reduced_synthetic_data.ipynb  # Reduced-feature variant of synthetic data approach
-│   ├── 06_oversampling_model.ipynb      # XGBoost with SMOTE oversampling for age balance
-│   └── 07_age_balanced_xgboost.ipynb   # Final model: age-binned balancing + XGBoost (best results)
+├── api/                                 # FastAPI application for model serving
+│   └── app.py
+├── dags/                                # Apache Airflow DAGs for orchestration
+│   └── fmri_pipeline_dag.py
+├── data/                                # Local data directory (ignored by git)
+├── infra/                               # Terraform IaC for GCP resources
+│   ├── main.tf
+│   ├── provider.tf
+│   └── variables.tf
+├── notebooks/                           # Original Jupyter notebooks (prototypes)
+├── src/                                 # Modular Python source code
+│   ├── cloud_ingest.py                  # GCP GCS and BigQuery ingestion scripts
+│   ├── extract.py                       # Data extraction logic
+│   ├── pipeline.py                      # Main CLI entrypoint
+│   ├── spark_transform.py               # PySpark ETL logic
+│   ├── train.py                         # Model training with MLflow integration
+│   └── transform.py                     # Local pandas/sklearn transformations
+├── tests/                               # Pytest suite
+│   ├── test_api.py
+│   ├── test_cloud_ingest.py
+│   ├── test_spark_transform.py
+│   └── test_transform.py
+├── .github/workflows/                   # CI/CD pipelines
+│   └── ci.yml
+├── Dockerfile                           # Dockerfile for Airflow/Spark ETL
+├── Dockerfile.api                       # Dockerfile for FastAPI serving
 ├── requirements.txt                     # Python dependencies
 └── README.md
 ```
 
-> **Note:** All notebooks were developed in Google Colab with data sourced from Google Drive. Raw fMRI connectivity data is not included in this repository due to size constraints. Synthetic data generated during experiments is also excluded.
-
 ## Usage
 
-**Clone the repository:**
+**1. Clone the repository:**
 ```bash
 git clone https://github.com/yourusername/fmri-age-prediction.git
 cd fmri-age-prediction
 ```
 
-**Install dependencies:**
+**2. Set up the environment:**
 ```bash
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Run notebooks in order:**
+**3. Run tests:**
+```bash
+pytest tests/
+```
 
-Open notebooks in the `notebooks/` directory sequentially (01 → 07). Each notebook corresponds to a stage of the pipeline:
+**4. Execute the pipeline locally (CLI):**
+You can use the new `src/pipeline.py` CLI to run specific stages of the local pipeline:
+```bash
+python src/pipeline.py --extract
+python src/pipeline.py --transform
+python src/pipeline.py --train
+```
 
-1. `01_tsv_generation.ipynb` — Merge per-subject TSV files and generate synthetic samples for underrepresented age groups.
-2. `02_initial_pca_model.ipynb` — Establish a PCA-based baseline model.
-3. `03_rf_xgboost_ensemble.ipynb` — Explore Random Forest, XGBoost, and Ridge ensemble with early bias correction.
-4. `04_synthetic_data_model.ipynb` — Train with synthetically augmented data.
-5. `05_reduced_synthetic_data.ipynb` — Reduced-feature version of the synthetic approach.
-6. `06_oversampling_model.ipynb` — Apply SMOTE oversampling to improve minority age-group coverage.
-7. `07_age_balanced_xgboost.ipynb` — Final optimized XGBoost model with age-binned balancing (best performance).
+**5. Deploy Infrastructure (Terraform):**
+```bash
+cd infra
+terraform init
+terraform apply
+```
 
-> Notebooks require a Google Drive mount with the Healthy Brain Network data at the configured paths. Update the path variables in each notebook to point to your local or Drive data location.
+**6. Serve the Model:**
+```bash
+docker build -t fmri-api -f Dockerfile.api .
+docker run -p 8000:8000 fmri-api
+```
 
 ## Future Directions
 
 - Incorporate longitudinal fMRI datasets for developmental trajectory modeling.
 - Test deep learning models (CNNs, GNNs) with larger datasets.
 - Explore multimodal data fusion (EEG + fMRI) for richer predictions.
-- Improve rare age prediction with advanced resampling techniques.
 
 ## Authors
 
