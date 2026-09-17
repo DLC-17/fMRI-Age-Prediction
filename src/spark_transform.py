@@ -4,7 +4,7 @@ from pyspark.ml.feature import VectorAssembler, PCA, StandardScaler
 from pyspark.sql.functions import col
 import pyspark.sql.functions as F
 
-def oversample_minority(df, label_col="age_group"):
+def oversample_minority(spark, df, label_col="age_group"):
     # Simple random oversampling to simulate SMOTE in PySpark
     try:
         counts = df.groupBy(label_col).count().collect()
@@ -63,7 +63,7 @@ def main():
     df_pca = pca_model.transform(df_scaled)
     
     # SMOTE / Oversampling
-    df_balanced = oversample_minority(df_pca, label_col="age_group")
+    df_balanced = oversample_minority(spark, df_pca, label_col="age_group")
     
     # Save output
     df_balanced.select("age_group", "pca_features").write.mode("overwrite").parquet(args.output)
