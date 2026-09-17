@@ -106,12 +106,19 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**3. Run tests:**
+**3. Download the Dataset:**
+The primary dataset is sourced from the [WiDS Datathon 2025](https://www.kaggle.com/competitions/widsdatathon2025) on Kaggle. Ensure your Kaggle API credentials (`KAGGLE_USERNAME` and `KAGGLE_KEY`) are set, then download the data:
+```bash
+pip install kagglehub
+python -c "import kagglehub; kagglehub.competition_download('widsdatathon2025')"
+```
+
+**4. Run tests:**
 ```bash
 pytest tests/
 ```
 
-**4. Execute the pipeline locally (CLI):**
+**5. Execute the pipeline locally (CLI):**
 You can use the new `src/pipeline.py` CLI to run specific stages of the local pipeline:
 ```bash
 python src/pipeline.py --extract
