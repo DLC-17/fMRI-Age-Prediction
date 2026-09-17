@@ -30,23 +30,20 @@ def main():
         print("Running extraction...")
         X, y, ids = load_data(args.data_dir)
         print(f"Extraction complete. Loaded {len(ids)} subjects with {X.shape[1]} features each.")
-        print(f"Target distribution (ADHD Outcome): {sum(y)} Positive, {len(y) - sum(y)} Negative")
+        print(f"Target Age Range: {min(y)} to {max(y)} years")
 
     if args.stage in ["transform", "all"]:
         print("Running transformation...")
         if args.stage != "all":
             X, y, ids = load_data(args.data_dir)
             
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
         # PCA Dimensionality reduction
         X_train_pca, X_test_pca, pca = apply_pca(X_train, X_test, n_components=40)
         
-        # SMOTE Balancing
-        X_train_bal, y_train_bal = apply_smote(X_train_pca, y_train)
-        
-        print(f"Transformation complete. Reduced to {X_train_bal.shape[1]} PCA components.")
-        print(f"Balanced training set has {len(y_train_bal)} samples.")
+        print(f"Transformation complete. Reduced to {X_train_pca.shape[1]} PCA components.")
+        print(f"Training set has {len(y_train)} samples.")
 
     if args.stage in ["train", "all"]:
         print("Running training...")
@@ -56,12 +53,12 @@ def main():
             
         from src.train import train_xgboost, evaluate_model
 
-        model = train_xgboost(X_train_bal, y_train_bal)
-        acc, auc = evaluate_model(model, X_test_pca, y_test)
+        model = train_xgboost(X_train_pca, y_train)
+        rmse, r2 = evaluate_model(model, X_test_pca, y_test)
         
         print(f"\n--- Final Results ---")
-        print(f"Accuracy: {acc:.4f}")
-        print(f"ROC AUC:  {auc:.4f}")
+        print(f"RMSE: {rmse:.4f} years")
+        print(f"R²:   {r2:.4f}")
         
         # Save model for the API
         model.save_model("xgboost_fmri.json")

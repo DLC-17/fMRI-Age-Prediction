@@ -38,7 +38,7 @@ def predict(request: PredictionRequest):
         import xgboost as xgb
         X = xgb.DMatrix([request.features])
         pred = model.predict(X)
-        return {"predicted_adhd": float(pred[0])}
+        return {"predicted_age": float(pred[0])}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

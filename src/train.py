@@ -2,35 +2,33 @@ import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
 import xgboost as xgb
-from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
+import numpy as np
+from sklearn.metrics import mean_squared_error, r2_score
 
 def train_xgboost(X_train, y_train, random_state=42):
     """
-    Trains an XGBoost Classifier for ADHD Outcome prediction.
+    Trains an XGBoost Regressor for Age prediction.
     """
-    with mlflow.start_run(run_name="XGBoost_Train", nested=True):
-        model = xgb.XGBClassifier(random_state=random_state, eval_metric="logloss")
+    with mlflow.start_run(run_name="XGBoost_Age_Train", nested=True):
+        model = xgb.XGBRegressor(random_state=random_state, objective="reg:squarederror")
         model.fit(X_train, y_train)
         
-        mlflow.log_param("model_type", "XGBoostClassifier")
+        mlflow.log_param("model_type", "XGBoostRegressor")
         mlflow.xgboost.log_model(model, "model")
         
         return model
 
 def evaluate_model(model, X_test, y_test):
     """
-    Evaluates the classification model and returns Accuracy and ROC AUC.
+    Evaluates the regression model and returns RMSE and R2.
     """
     predictions = model.predict(X_test)
-    probs = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else predictions
     
-    acc = accuracy_score(y_test, predictions)
-    auc = roc_auc_score(y_test, probs)
-    
-    print(classification_report(y_test, predictions))
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+    r2 = r2_score(y_test, predictions)
     
     if mlflow.active_run():
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("roc_auc", auc)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("r2", r2)
         
-    return acc, auc
+    return rmse, r2
