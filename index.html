@@ -65,30 +65,6 @@
 </head>
 <body class="bg-[#070b14] text-slate-200 antialiased selection:bg-teal-500 selection:text-white">
 
-    <!-- Top Architecture Pivot Notice Banner -->
-    <div class="bg-gradient-to-r from-teal-950/80 via-slate-900 to-indigo-950/80 border-b border-teal-500/30 text-xs px-4 py-2.5">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-300">
-            <div class="flex items-center space-x-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/40">
-                    ⚡ Static Architecture Pivot
-                </span>
-                <span class="text-slate-300">
-                    Pivoted from costly cloud backends (GCP / Hugging Face) to an autonomous, zero-cost, <strong>100% in-browser client ML architecture</strong>.
-                </span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <a href="#playground" class="text-teal-400 hover:text-teal-300 font-medium underline underline-offset-2 flex items-center">
-                    Run In-Browser Model &rarr;
-                </a>
-                <span class="text-slate-600 hidden sm:inline">|</span>
-                <a href="https://github.com/yourusername/fmri-age-prediction" target="_blank" class="hover:text-white transition flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    GitHub
-                </a>
-            </div>
-        </div>
-    </div>
-
     <!-- Navigation Header -->
     <header class="sticky top-0 z-50 glass-card border-x-0 border-t-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -98,7 +74,6 @@
                 </div>
                 <div>
                     <div class="font-extrabold text-slate-100 tracking-tight text-lg group-hover:text-teal-400 transition">NeuroAge-fMRI</div>
-                    <div class="text-[10px] text-teal-400 font-mono tracking-wider uppercase">Pediatric Connectomics</div>
                 </div>
             </a>
             
@@ -112,7 +87,6 @@
                     Live Predictor
                 </a>
                 <a href="#neurobiology" class="hover:text-teal-400 transition">Neurobiology</a>
-                <a href="#architecture" class="hover:text-teal-400 transition">Architecture</a>
                 <a href="#team" class="hover:text-teal-400 transition">Team & Docs</a>
             </nav>
 
@@ -136,11 +110,6 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto space-y-6">
-                <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs font-medium text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
-                    <span>Saint Mary’s College of California • Capstone Research</span>
-                </div>
-                
                 <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
                     Pediatric Brain Age Prediction from <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 glow-text">fMRI Connectomes</span>
                 </h1>
@@ -203,9 +172,9 @@
                     <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 text-2xl">
                         🏥
                     </div>
-                    <h3 class="text-xl font-bold text-white">Healthy Brain Network (HBN)</h3>
+                    <h3 class="text-xl font-bold text-white">WiDS Datathon Dataset (HBN)</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">
-                        Sourced via the <a href="http://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/index.html" target="_blank" class="text-teal-400 underline">Child Mind Institute HBN</a> and the WiDS Datathon 2025. Cohort of <strong class="text-slate-200">1,578 pediatric subjects</strong> aged 5.0 to 21.9 years (mean: 11.25y, SD: 3.23y).
+                        Sourced from the <a href="https://www.kaggle.com/competitions/widsdatathon2025" target="_blank" class="text-teal-400 underline">WiDS Datathon 2025</a>. Cohort of <strong class="text-slate-200">1,578 pediatric subjects</strong> aged 5.0 to 21.9 years (mean: 11.25y, SD: 3.23y).
                     </p>
                     <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
                         <div class="flex justify-between"><span>Modality:</span><span class="font-mono text-teal-400">Resting-State BOLD fMRI</span></div>
@@ -787,90 +756,7 @@
         </div>
     </section>
 
-    <!-- SECTION 6: WHY STATIC ARCHITECTURE (DEPLOYMENT PIVOT) -->
-    <section id="architecture" class="py-20 border-b border-slate-800 bg-slate-950/40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mb-12">
-                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Engineering Rationale</span>
-                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Why We Scrapped GCP & Hugging Face</h2>
-                <p class="text-slate-400 text-base mt-3 leading-relaxed">
-                    Deploying research models through heavy cloud infrastructure often introduces unnecessary cost, cold-start latency, and fragile API boundaries. We pivoted to a modern, zero-overhead static client architecture.
-                </p>
-            </div>
-
-            <!-- Comparison Table: Cloud vs Pure Static -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Old Cloud Architecture -->
-                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-rose-900/40 space-y-5 bg-rose-950/10">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 font-mono text-xs font-bold">ABANDONED ROADMAP</span>
-                        <span class="text-xs text-rose-400 font-mono">GCP Cloud Run + Hugging Face</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-white">Cloud Container Microservice</h3>
-                    <ul class="space-y-3 text-xs text-slate-300">
-                        <li class="flex items-start gap-2">
-                            <span class="text-rose-400 font-bold">✕</span>
-                            <span><strong>Recurring Cloud Costs:</strong> Google Cloud Run instances, GCS bucket egress, and Artifact Registry fees.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-rose-400 font-bold">✕</span>
-                            <span><strong>Cold Start Latency:</strong> 4–8 second container boot times on serverless cold starts.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-rose-400 font-bold">✕</span>
-                            <span><strong>Fragile Networking:</strong> Cross-Origin Resource Sharing (CORS) proxies, SSL renewals, and API key management.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-rose-400 font-bold">✕</span>
-                            <span><strong>Hosting Dependency:</strong> Vulnerable to external server outages, Hugging Face sleep states, and container deprecations.</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- New Static Architecture -->
-                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-teal-500/40 space-y-5 bg-teal-950/10">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-1 rounded bg-teal-500/20 text-teal-300 font-mono text-xs font-bold">CURRENT SHOWCASE</span>
-                        <span class="text-xs text-teal-400 font-mono">Static HTML + Pure Client-Side ML</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-white">Autonomous Client Architecture</h3>
-                    <ul class="space-y-3 text-xs text-slate-300">
-                        <li class="flex items-start gap-2">
-                            <span class="text-teal-400 font-bold">✓</span>
-                            <span><strong>100% Free Hosting:</strong> Runs permanently on GitHub Pages, Vercel, or static web servers with zero monthly bill.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-teal-400 font-bold">✓</span>
-                            <span><strong>Instant &lt;1ms Execution:</strong> In-browser tree evaluation runs at native JavaScript speed with zero network hop.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-teal-400 font-bold">✓</span>
-                            <span><strong>Absolute Privacy (HIPAA Friendly):</strong> Patient fMRI connectomes never leave the user's browser or device.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="text-teal-400 font-bold">✓</span>
-                            <span><strong>Offline Resilience:</strong> Download this repository and double click <code class="text-teal-300">index.html</code>; works offline everywhere!</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Terminal Commands for gh-pages -->
-            <div class="glass-card p-6 rounded-2xl border border-slate-800 mt-8 space-y-3">
-                <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
-                    <span class="font-bold text-slate-200">🚀 Deploy to GitHub Pages (One-Time Command):</span>
-                    <span>Zero Build Step</span>
-                </div>
-                <pre class="bg-slate-950 p-4 rounded-xl text-teal-400 text-xs overflow-x-auto border border-slate-800 font-mono"><code># Simply push this repo to GitHub and enable GitHub Pages on branch: main (root /)
-# Alternatively, deploy via a clean gh-pages orphan branch:
-git checkout -b gh-pages
-git push -u origin gh-pages
-# Done! Your interactive research showcase is live worldwide with zero server maintenance.</code></pre>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION 7: RESEARCH TEAM, PAPER & CITATIONS -->
+    <!-- SECTION 6: RESEARCH TEAM, PAPER & CITATIONS -->
     <section id="team" class="py-20 border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-3xl mb-12">

@@ -21,7 +21,7 @@
 
 ## Overview
 
-This project investigates how resting-state functional magnetic resonance imaging (rs-fMRI) Blood Oxygenation Level Dependent (BOLD) data can predict chronological age across a pediatric cohort (Ages 5–21). Using the open-resource [Healthy Brain Network (HBN) dataset](http://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/index.html) (Child Mind Institute) via the WiDS Datathon 2025 ($N = 1,578$), we developed an equitable machine learning pipeline that addresses:
+This project investigates how resting-state functional magnetic resonance imaging (rs-fMRI) Blood Oxygenation Level Dependent (BOLD) data can predict chronological age across a pediatric cohort (Ages 5–21). Using the open-resource Healthy Brain Network (HBN) dataset sourced from the [WiDS Datathon 2025](https://www.kaggle.com/competitions/widsdatathon2025) ($N = 1,578$), we developed an equitable machine learning pipeline that addresses:
 1. **The Curse of Dimensionality:** 19,900 pairwise functional connectivity (FC) features against 1,578 subjects ($p \gg n$).
 2. **Severe Demographic Imbalance:** Dense concentration in ages 9–14 with extreme scarcity in young children (<8y) and emerging adults (17–21y, ~15%).
 3. **No-Outlier-Removal Constraint:** A strict protocol rule prohibiting subject pruning, requiring algorithmic noise resilience.
@@ -40,7 +40,7 @@ Our final optimized **Sample-Weighted XGBoost model with 40-PCA latent represent
   - Tested deep learning (2D CNNs and GNNs), which overfitted due to small sample size and topological variance.
 - **The Breakthrough Solution:** Balanced the 40-PCA latent space via SMOTE/random undersampling, paired with **inverse-frequency loss sample weighting** inside XGBoost, penalizing errors on rare age cohorts up to 2.0x higher.
 - **Explainability:** SHAP feature analysis mapping latent components back to anatomical hubs, demonstrating biological alignment with executive function maturation.
-- **Client-Side Deployment Pivot:** Scrapped high-cost, high-latency cloud backends (GCP Cloud Run, GCS, BigQuery, Hugging Face) in favor of an autonomous, zero-cost **static web showcase** (`index.html`) running native JavaScript XGBoost tree evaluation (<1ms latency).
+- **In-Browser Client-Side Deployment:** Implemented an autonomous, zero-cost **static web showcase** (`index.html`) running native JavaScript XGBoost tree evaluation (<1ms latency).
 
 ---
 
@@ -66,18 +66,9 @@ Our final optimized **Sample-Weighted XGBoost model with 40-PCA latent represent
 
 ---
 
-## 🏗️ Architecture & Deployment Pivot
+## 🌐 [Interactive Research Showcase (`index.html`)](index.html)
 
-> [!NOTE]
-> **Why Cloud Deployment was Scrapped:**  
-> Deployment through Google Cloud Platform (Cloud Run, GCS, BigQuery) and Hugging Face Spaces was intentionally **scrapped** during our architecture audit. Replacing heavy containerized microservices with an autonomous **Static Showcase Architecture** achieves:
-> - **$0/month Cost:** Hosted permanently on GitHub Pages with zero cloud bills.
-> - **Zero Cold Starts:** In-browser tree evaluation executes in **<1ms** natively in JavaScript, vs. 4–8 second Docker container boot times.
-> - **100% Patient Privacy:** Connectome matrices are evaluated entirely inside the user's browser (HIPAA-friendly; zero data leaves the machine).
-> - **Zero Maintenance:** No Docker images, no CORS proxies, no expired SSL certificates, and no cloud outages.
-
-### 🌐 [Interactive Research Showcase (`index.html`)](index.html)
-- **Live In-Browser XGBoost Predictor:** Evaluates the serialized 100-tree model directly in client JavaScript with zero backend calls.
+- **Live In-Browser XGBoost Predictor:** Evaluates the serialized 100-tree model directly in client JavaScript with zero backend calls (<1ms latency).
 - **Subject Archetype Selector:** Test simulated patient connectomes for Child (6.5y), Middle Child (8.0y), Preadolescent (10.5y), Adolescent (14.5y), Middle Teen (16.0y), and Emerging Adult (19.5y).
 - **Interactive PCA Feature Sliders:** Tweak top principal components in real time to observe live age output, brain age gap ($\Delta$), and frontalization maturity index.
 - **Interactive Visualizations:** Interactive Chart.js histograms, benchmark comparisons, and authentic publication figures.
@@ -140,13 +131,7 @@ python3 -m http.server 8000
 # Navigate to http://localhost:8000
 ```
 
-### 2. Deploy to GitHub Pages (Zero-Cost Hosting)
-To host the interactive showcase live:
-1. Navigate to your repository settings on GitHub: **Settings &rarr; Pages**.
-2. Under **Build and deployment**, select **Deploy from a branch**.
-3. Set **Branch** to `main` and **Folder** to `/ (root)`, then click **Save**.
-
-### 3. Local Python Development & CLI Pipeline
+### 2. Local Python Development & CLI Pipeline
 
 ```bash
 # 1. Clone the repository
