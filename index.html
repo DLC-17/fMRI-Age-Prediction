@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroAge-fMRI | Pediatric Brain Age Prediction from Functional Connectomes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                        },
+                        neuro: {
+                            purple: '#8b5cf6',
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Model & Archetypes Scripts -->
+    <script src="assets/xgb_model.js"></script>
+    <script src="assets/archetypes.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-3px);
+            border-color: rgba(20, 184, 166, 0.4);
+            box-shadow: 0 20px 30px -10px rgba(13, 148, 136, 0.15);
+        }
+        .glow-text {
+            text-shadow: 0 0 20px rgba(20, 184, 166, 0.35);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="bg-[#070b14] text-slate-200 antialiased selection:bg-teal-500 selection:text-white">
+
+    <!-- Top Architecture Pivot Notice Banner -->
+    <div class="bg-gradient-to-r from-teal-950/80 via-slate-900 to-indigo-950/80 border-b border-teal-500/30 text-xs px-4 py-2.5">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-300">
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                    ⚡ Static Architecture Pivot
+                </span>
+                <span class="text-slate-300">
+                    Pivoted from costly cloud backends (GCP / Hugging Face) to an autonomous, zero-cost, <strong>100% in-browser client ML architecture</strong>.
+                </span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="#playground" class="text-teal-400 hover:text-teal-300 font-medium underline underline-offset-2 flex items-center">
+                    Run In-Browser Model &rarr;
+                </a>
+                <span class="text-slate-600 hidden sm:inline">|</span>
+                <a href="https://github.com/yourusername/fmri-age-prediction" target="_blank" class="hover:text-white transition flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-card border-x-0 border-t-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform">
+                    <span class="text-xl">🧠</span>
+                </div>
+                <div>
+                    <div class="font-extrabold text-slate-100 tracking-tight text-lg group-hover:text-teal-400 transition">NeuroAge-fMRI</div>
+                    <div class="text-[10px] text-teal-400 font-mono tracking-wider uppercase">Pediatric Connectomics</div>
+                </div>
+            </a>
+            
+            <nav class="hidden md:flex items-center space-x-7 text-sm font-medium text-slate-300">
+                <a href="#overview" class="hover:text-teal-400 transition">Overview</a>
+                <a href="#data" class="hover:text-teal-400 transition">The Data</a>
+                <a href="#decisions" class="hover:text-teal-400 transition">Decision Log</a>
+                <a href="#algorithm" class="hover:text-teal-400 transition">Winning Model</a>
+                <a href="#playground" class="text-teal-400 hover:text-teal-300 transition flex items-center gap-1 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                    Live Predictor
+                </a>
+                <a href="#neurobiology" class="hover:text-teal-400 transition">Neurobiology</a>
+                <a href="#architecture" class="hover:text-teal-400 transition">Architecture</a>
+                <a href="#team" class="hover:text-teal-400 transition">Team & Docs</a>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <a href="docs/capstone_article.pdf" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Paper PDF
+                </a>
+                <a href="#playground" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/30 transition">
+                    Launch Demo
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section id="overview" class="relative overflow-hidden pt-16 pb-20 border-b border-slate-800">
+        <!-- Ambient Background Glows -->
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+        <div class="absolute top-20 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-6">
+                <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs font-medium text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                    <span>Saint Mary’s College of California • Capstone Research</span>
+                </div>
+                
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                    Pediatric Brain Age Prediction from <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 glow-text">fMRI Connectomes</span>
+                </h1>
+
+                <p class="text-lg sm:text-xl text-slate-400 font-normal leading-relaxed">
+                    Overcoming the <span class="text-slate-200 font-semibold">curse of dimensionality (19,900 features)</span> and severe <span class="text-slate-200 font-semibold">pediatric age imbalance</span> to decode neurodevelopmental functional frontalization across ages 5–21.
+                </p>
+
+                <div class="pt-2 flex flex-wrap justify-center gap-4">
+                    <a href="#playground" class="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-teal-500/25 transition duration-200 flex items-center space-x-2">
+                        <span>🧪 Live Neuro-Inference Playground</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                    <a href="#decisions" class="px-6 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition duration-200 flex items-center space-x-2">
+                        <span>📖 The Decision Log & Trials</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Key Results Metrics Grid -->
+            <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+                <div class="glass-card glass-card-hover p-5 rounded-2xl text-center border-t-2 border-t-teal-500">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">0.72</div>
+                    <div class="text-xs text-teal-400 font-bold uppercase tracking-wider mt-1">Variance Explained (R²)</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Up from 0.35 (Ridge) & 0.45 (RF)</div>
+                </div>
+                <div class="glass-card glass-card-hover p-5 rounded-2xl text-center border-t-2 border-t-cyan-500">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">2.1 <span class="text-lg font-normal text-slate-400">yrs</span></div>
+                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-wider mt-1">Overall RMSE</div>
+                    <div class="text-[11px] text-slate-400 mt-1">>50% error reduction from baseline</div>
+                </div>
+                <div class="glass-card glass-card-hover p-5 rounded-2xl text-center border-t-2 border-t-indigo-500">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">1.6 <span class="text-lg font-normal text-slate-400">yrs</span></div>
+                    <div class="text-xs text-indigo-400 font-bold uppercase tracking-wider mt-1">Mean Absolute Error (MAE)</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Tight error spread across age bins</div>
+                </div>
+                <div class="glass-card glass-card-hover p-5 rounded-2xl text-center border-t-2 border-t-purple-500">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">19,900 &rarr; 40</div>
+                    <div class="text-xs text-purple-400 font-bold uppercase tracking-wider mt-1">PCA Compression</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Retaining 90% Macro Variance</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 1: THE DATA PROCESSED -->
+    <section id="data" class="py-20 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Connectomic Inputs & Processing</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">The Type of Data Processed</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    Pediatric resting-state functional Magnetic Resonance Imaging (rs-fMRI) presents severe dimensionality and demographic imbalance hurdles that break conventional statistical pipelines.
+                </p>
+            </div>
+
+            <!-- 3 Pillars of Data -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 text-2xl">
+                        🏥
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Healthy Brain Network (HBN)</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Sourced via the <a href="http://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/index.html" target="_blank" class="text-teal-400 underline">Child Mind Institute HBN</a> and the WiDS Datathon 2025. Cohort of <strong class="text-slate-200">1,578 pediatric subjects</strong> aged 5.0 to 21.9 years (mean: 11.25y, SD: 3.23y).
+                    </p>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+                        <div class="flex justify-between"><span>Modality:</span><span class="font-mono text-teal-400">Resting-State BOLD fMRI</span></div>
+                        <div class="flex justify-between"><span>Sampling:</span><span class="font-mono text-teal-400">Spontaneous Fluctuations</span></div>
+                        <div class="flex justify-between"><span>Ages:</span><span class="font-mono text-teal-400">5.0 – 21.9 years</span></div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl">
+                        🧩
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Schaefer 200-Parcel Atlas</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Cortical surface parcellated into 200 functional Regions of Interest (ROIs). Pairwise Pearson temporal correlations create a symmetric 200×200 connectivity matrix per participant.
+                    </p>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 font-mono">
+                        <div class="text-indigo-400 font-semibold mb-1">Feature Extraction Math:</div>
+                        <div>Features = (N × (N - 1)) / 2</div>
+                        <div class="text-slate-400">= (200 × 199) / 2</div>
+                        <div class="text-teal-300 font-bold">= 19,900 upper-triangle pairs</div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl">
+                        ⚖️
+                    </div>
+                    <h3 class="text-xl font-bold text-white">The Demographic Imbalance</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Severe right-skew with peak density in ages 9–14. Young children (<8y) and emerging adults (17–21y, ~15%) are heavily underrepresented.
+                    </p>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-amber-500/30 text-xs text-amber-200/90 bg-amber-950/20">
+                        <strong>Rule Constraint:</strong> Study protocol strictly forbade outlier removal, requiring noise-resilient modeling rather than aggressive data discarding.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demographic Visualization: Raw vs Balanced -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span>Demographic Age Distribution & Resampling Strategy</span>
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-1">
+                            Interactive comparison between original training distribution and the balanced / sample-weighted cohort.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                        <button id="btn-chart-raw" class="px-3 py-1.5 rounded-lg bg-teal-600 text-white font-medium transition" onclick="toggleAgeDistribution('raw')">Raw Cohort (N=1,213)</button>
+                        <button id="btn-chart-balanced" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition" onclick="toggleAgeDistribution('balanced')">Balanced / Weighted</button>
+                    </div>
+                </div>
+
+                <!-- Chart.js Container -->
+                <div class="h-72 w-full">
+                    <canvas id="ageDistributionChart"></canvas>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-400">
+                    <div class="flex items-start space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-rose-500 mt-0.5 flex-shrink-0"></div>
+                        <div><strong class="text-slate-200">Ages 5–8 (Underrepresented):</strong> Extreme scarcity leads unweighted models to predict too high (regression to mean).</div>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-teal-500 mt-0.5 flex-shrink-0"></div>
+                        <div><strong class="text-slate-200">Ages 9–15 (Dense Peak):</strong> Accounts for >65% of raw samples; drives greedy tree-splitting in naive Random Forests.</div>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-indigo-500 mt-0.5 flex-shrink-0"></div>
+                        <div><strong class="text-slate-200">Ages 16–21 (Right Tail):</strong> Underrepresented; naive models capped predictions at 16y without inverse-frequency weighting.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: THE DECISIONS MADE -->
+    <section id="decisions" class="py-20 border-b border-slate-800 bg-slate-950/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Iterative Engineering & Scientific Pivots</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">The Decisions Made: Trial & Error Journey</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    Real-world data science is defined by hypothesis testing, dead-ends, and structural breakthroughs. Here is the complete chronological roadmap of every major decision.
+                </p>
+            </div>
+
+            <!-- Decision Timeline Cards -->
+            <div class="space-y-6">
+                
+                <!-- Decision 1 -->
+                <div class="glass-card p-6 sm:p-8 rounded-2xl border-l-4 border-l-purple-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-300 font-mono text-xs font-bold">DECISION 01</span>
+                            <h3 class="text-xl font-bold text-white">Dimensionality Reduction: 19,900 FC Features &rarr; 40 Principal Components</h3>
+                        </div>
+                        <span class="text-xs font-mono text-purple-400 bg-purple-950/40 px-2 py-1 rounded border border-purple-800/50">Status: ✅ Adopted Sweet Spot</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-sm">
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">The Problem:</div>
+                            <p class="text-slate-300">With 19,900 pairwise correlation features against 1,578 subjects ($p \gg n$), unregularized models suffered massive collinearity, high-frequency imaging noise, and severe overfitting.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Exploration:</div>
+                            <p class="text-slate-300">Tested variance thresholds: <strong>95%</strong> (>120 components), <strong>90%</strong> (40 components), and <strong>85%</strong> (18 components). 95% retained excessive noise; 85% lost critical regional coupling.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-teal-400 uppercase tracking-wider">The Breakthrough:</div>
+                            <p class="text-slate-300">40 components at <strong>90% explained variance</strong> captured macro-scale resting networks while slashing feature space by 99.8%, enabling stable, scalable downstream estimators.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decision 2 -->
+                <div class="glass-card p-6 sm:p-8 rounded-2xl border-l-4 border-l-rose-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-300 font-mono text-xs font-bold">DECISION 02</span>
+                            <h3 class="text-xl font-bold text-white">Baseline Models & Failure on Age Extremes (Ridge, RF, CNN/GNN)</h3>
+                        </div>
+                        <span class="text-xs font-mono text-rose-400 bg-rose-950/40 px-2 py-1 rounded border border-rose-800/50">Status: ❌ Baselines Failed</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-sm">
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ridge Regression:</div>
+                            <p class="text-slate-300">Linear baseline yielded $R^2 \approx 0.35$ and RMSE = 4.2 years. Incapable of modeling non-linear maturation trajectories; severe regression to dataset mean (11.3 years).</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Random Forest Regressor:</div>
+                            <p class="text-slate-300">$R^2 \approx 0.45$, RMSE = 3.8–4.8 years. High outlier sensitivity. In multiple cross-validation folds, RF produced <em>zero valid predictions</em> for the 5–10 age bracket due to greedy splits on 10–14.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-rose-400 uppercase tracking-wider">Deep Learning (CNN & GNN):</div>
+                            <p class="text-slate-300">Evaluated 2D CNNs on connectome heatmaps and GNNs on brain graphs. Both collapsed/severely overfitted due to small sample size ($N \approx 1,500$) and high inter-individual topological variance.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decision 3 -->
+                <div class="glass-card p-6 sm:p-8 rounded-2xl border-l-4 border-l-amber-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-mono text-xs font-bold">DECISION 03</span>
+                            <h3 class="text-xl font-bold text-white">The Synthetic Data Trap: Generating Raw Connectomes</h3>
+                        </div>
+                        <span class="text-xs font-mono text-amber-400 bg-amber-950/40 px-2 py-1 rounded border border-amber-800/50">Status: 🚫 Scrapped & Abandoned</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-sm">
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">The Hypothesis:</div>
+                            <p class="text-slate-300">Fill sparse age brackets (&lt;8 and 17–21) by generating pseudo-matrices via range sampling across biometric covariates (BMI, p-factor) and adding Gaussian noise.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">The Crash:</div>
+                            <p class="text-slate-300">File sizes exploded exponentially. Multiple training runs crashed from RAM exhaustion. Generated matrices broke positive semi-definiteness and introduced non-physiological correlation artifacts.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider">The Lesson:</div>
+                            <p class="text-slate-300">Never inject noisy synthetic data into high-dimensional correlation spaces. The team abandoned raw matrix generation and pivoted to latent-space balancing.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decision 4 -->
+                <div class="glass-card p-6 sm:p-8 rounded-2xl border-l-4 border-l-teal-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2.5 py-1 rounded-md bg-teal-500/20 text-teal-300 font-mono text-xs font-bold">DECISION 04</span>
+                            <h3 class="text-xl font-bold text-white">The Breakthrough: Latent Balancing + Loss Sample Weighting in XGBoost</h3>
+                        </div>
+                        <span class="text-xs font-mono text-teal-400 bg-teal-950/40 px-2 py-1 rounded border border-teal-800/50">Status: 🏆 Winning Solution</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-sm">
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">1. PCA Latent Resampling:</div>
+                            <p class="text-slate-300">Applied SMOTE & Random Undersampling directly in the 40-PCA latent space (~65 samples per bin, $N=1,105$), verified for statistical fidelity with the Kolmogorov-Smirnov test.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. Loss Sample Weighting:</div>
+                            <p class="text-slate-300">Assigned inverse-frequency sample weights $w_i = 1 / P(\text{age}_i)$ inside XGBoost's loss function, penalizing errors on rare ages (1.5x–2.0x weight) without hallucinating matrices.</p>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-bold text-teal-400 uppercase tracking-wider">3. Quantile Rank Calibration:</div>
+                            <p class="text-slate-300">Quantile transformation normalized feature distributions; post-processing rank stretching uncompressed predictions at the 5–21 boundaries, achieving $R^2 = 0.72$!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: THE END ALGORITHM & BENCHMARKS -->
+    <section id="algorithm" class="py-20 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Architecture & Performance</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">The End Algorithm: Regularized Gradient Boosting</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    Our winning architecture combines a deterministic feature engineering pipeline with an ensemble of 100 gradient boosted regression trees optimized for neurodevelopmental non-linearities.
+                </p>
+            </div>
+
+            <!-- Algorithm Architecture Flowchart -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl mb-12 border border-slate-800">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span>End-to-End Inference Pipeline Flow</span>
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center text-xs">
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">📁</span>
+                        <div class="font-bold text-slate-200">Raw TSV</div>
+                        <div class="text-slate-400">200×200 Pearson FC Matrix</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">📐</span>
+                        <div class="font-bold text-slate-200">Upper Triangle</div>
+                        <div class="text-teal-400 font-mono">19,900 pairs</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">⚙️</span>
+                        <div class="font-bold text-slate-200">StandardScaler</div>
+                        <div class="text-slate-400">Zero mean, unit variance</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-teal-500/30 bg-teal-950/20 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">📉</span>
+                        <div class="font-bold text-teal-300">PCA (90% Var)</div>
+                        <div class="text-teal-400 font-mono font-bold">40 Components</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-indigo-500/30 bg-indigo-950/20 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">🌲</span>
+                        <div class="font-bold text-indigo-300">XGBoost Regressor</div>
+                        <div class="text-indigo-400 font-mono">Sample Weighted</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-emerald-500/30 bg-emerald-950/20 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-xl">🎯</span>
+                        <div class="font-bold text-emerald-300">Calibrated Age</div>
+                        <div class="text-emerald-400 font-mono font-bold">Range [5.0, 21.9]</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-400">
+                    <div><strong>Hyperparameters:</strong> n_estimators: 300 | lr: 0.05 | max_depth: 8 | subsample: 0.8 | colsample: 0.8</div>
+                    <div class="text-teal-400 font-semibold">Objective: reg:squarederror + L1/L2 regularization</div>
+                </div>
+            </div>
+
+            <!-- Model Benchmark Comparison Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <!-- Comparative Metrics Chart -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-white mb-2">Model Benchmark: Overall Metrics</h3>
+                    <p class="text-xs text-slate-400 mb-6">Cross-validated comparison across candidate architectures on internal test split.</p>
+                    <div class="h-64 w-full">
+                        <canvas id="modelBenchmarkChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Stratified Age Performance Chart -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-white mb-2">Stratified Performance by Age Bracket</h3>
+                    <p class="text-xs text-slate-400 mb-6">Demonstrating equity across previously neglected pediatric and young adult brackets.</p>
+                    <div class="h-64 w-full">
+                        <canvas id="stratifiedPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparative Table -->
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900/90 text-xs font-mono text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-4 px-6">Model Architecture</th>
+                                <th class="py-4 px-4">Features</th>
+                                <th class="py-4 px-4">Sample Balancing</th>
+                                <th class="py-4 px-4 text-center">R² Score</th>
+                                <th class="py-4 px-4 text-center">RMSE (Years)</th>
+                                <th class="py-4 px-4 text-center">MAE (Years)</th>
+                                <th class="py-4 px-6 text-right">Failure Modes / Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60 font-mono text-xs">
+                            <tr class="hover:bg-slate-900/40 transition">
+                                <td class="py-4 px-6 font-sans font-semibold text-slate-300">Ridge Regression</td>
+                                <td class="py-4 px-4 text-slate-400">40 PCA</td>
+                                <td class="py-4 px-4 text-slate-400">None (Raw)</td>
+                                <td class="py-4 px-4 text-center text-rose-400">0.35</td>
+                                <td class="py-4 px-4 text-center text-rose-400">4.2 yrs</td>
+                                <td class="py-4 px-4 text-center text-rose-400">3.4 yrs</td>
+                                <td class="py-4 px-6 text-right font-sans text-slate-400">Flatlined at boundaries; cannot fit non-linear curves</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40 transition">
+                                <td class="py-4 px-6 font-sans font-semibold text-slate-300">Random Forest Regressor</td>
+                                <td class="py-4 px-4 text-slate-400">40 PCA</td>
+                                <td class="py-4 px-4 text-slate-400">None (Raw)</td>
+                                <td class="py-4 px-4 text-center text-amber-400">0.45</td>
+                                <td class="py-4 px-4 text-center text-amber-400">3.8 yrs</td>
+                                <td class="py-4 px-4 text-center text-amber-400">3.0 yrs</td>
+                                <td class="py-4 px-6 text-right font-sans text-slate-400">Zero predictions for ages 5–10 in several folds</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40 transition">
+                                <td class="py-4 px-6 font-sans font-semibold text-slate-300">Deep Learning (CNN / GNN)</td>
+                                <td class="py-4 px-4 text-slate-400">200×200 / Graph</td>
+                                <td class="py-4 px-4 text-slate-400">None (Raw)</td>
+                                <td class="py-4 px-4 text-center text-rose-400">&lt;0.20</td>
+                                <td class="py-4 px-4 text-center text-rose-400">>4.5 yrs</td>
+                                <td class="py-4 px-4 text-center text-rose-400">>3.6 yrs</td>
+                                <td class="py-4 px-6 text-right font-sans text-slate-400">Severe overfitting from high spatial variance & small N</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40 transition">
+                                <td class="py-4 px-6 font-sans font-semibold text-slate-300">Raw Synthetic XGBoost</td>
+                                <td class="py-4 px-4 text-slate-400">40 PCA</td>
+                                <td class="py-4 px-4 text-slate-400">Noisy Matrix Interp</td>
+                                <td class="py-4 px-4 text-center text-amber-400">0.52</td>
+                                <td class="py-4 px-4 text-center text-amber-400">3.4 yrs</td>
+                                <td class="py-4 px-4 text-center text-amber-400">2.6 yrs</td>
+                                <td class="py-4 px-6 text-right font-sans text-slate-400">Unstable training, RAM crashes, noisy hallucinations</td>
+                            </tr>
+                            <tr class="bg-teal-950/20 hover:bg-teal-950/30 transition border-l-4 border-l-teal-500 font-bold">
+                                <td class="py-4 px-6 font-sans text-teal-300 flex items-center gap-1.5">
+                                    <span>⭐ Final Weighted XGBoost</span>
+                                </td>
+                                <td class="py-4 px-4 text-teal-300">40 PCA</td>
+                                <td class="py-4 px-4 text-teal-300">Sample Weights + SMOTE</td>
+                                <td class="py-4 px-4 text-center text-teal-300 font-extrabold text-sm">0.72</td>
+                                <td class="py-4 px-4 text-center text-teal-300 font-extrabold text-sm">2.1 yrs</td>
+                                <td class="py-4 px-4 text-center text-teal-300 font-extrabold text-sm">1.6 yrs</td>
+                                <td class="py-4 px-6 text-right font-sans text-teal-300 font-semibold">Equitable across all 3 age epochs; robust fit</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: LIVE IN-BROWSER PREDICTION PLAYGROUND -->
+    <section id="playground" class="py-20 border-b border-slate-800 bg-gradient-to-b from-slate-950 via-[#0a0f1d] to-[#070b14]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-10">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-semibold mb-3">
+                    ⚡ 100% In-Browser Execution • Pure Client-Side ML
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white">Interactive Neuro-Inference Playground</h2>
+                <p class="text-slate-400 text-base mt-2">
+                    Execute the real 100-tree gradient boosted model directly in your browser. Choose authentic participant archetypes or tweak top principal components to observe real-time age prediction, brain age gap, and frontalization index.
+                </p>
+            </div>
+
+            <!-- Subject Archetype Selection Bar -->
+            <div class="glass-card p-5 rounded-2xl mb-8 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <span>Select Patient Profile:</span>
+                </div>
+                <div class="flex flex-wrap gap-2" id="archetype-buttons">
+                    <button onclick="loadArchetype('6.5', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        🧒 Child (Age 6.5)
+                    </button>
+                    <button onclick="loadArchetype('8.0', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        👦 Middle Child (Age 8.0)
+                    </button>
+                    <button onclick="loadArchetype('10.5', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        🧑‍🦱 Preadolescent (Age 10.5)
+                    </button>
+                    <button onclick="loadArchetype('14.5', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600 text-white border border-teal-500 transition font-bold">
+                        🧑 Adolescent (Age 14.5)
+                    </button>
+                    <button onclick="loadArchetype('16.0', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        👱 Middle Teen (Age 16.0)
+                    </button>
+                    <button onclick="loadArchetype('19.5', this)" class="arch-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        🧑‍🎓 Emerging Adult (Age 19.5)
+                    </button>
+                    <button onclick="resetSliders()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition">
+                        🔄 Reset Zero Vector
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two Column Interactive Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Left Column: PCA Feature Sliders (7 Cols) -->
+                <div class="lg:col-span-7 glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <span>Latent Connectome Features (PCA Space)</span>
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Top 8 components responsible for >45% model tree splits.</p>
+                        </div>
+                        <span class="text-[11px] font-mono text-teal-400 bg-teal-950/40 px-2.5 py-1 rounded-md border border-teal-800/40">
+                            Latent Dim: 40
+                        </span>
+                    </div>
+
+                    <!-- Slider List -->
+                    <div class="space-y-4" id="sliders-container">
+                        <!-- Sliders will be populated or bound here -->
+                    </div>
+
+                    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1.5">
+                        <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+                            <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Neurobiological Feature Interpretation:</span>
+                        </div>
+                        <p><strong>PC0 & PC1:</strong> Strongly encode frontal-limbic coupling and default mode segregation.</p>
+                        <p><strong>PC2 & PC3:</strong> Reflect sensorimotor integration and dorsal attention network maturation.</p>
+                    </div>
+                </div>
+
+                <!-- Right Column: Real-Time Prediction Output (5 Cols) -->
+                <div class="lg:col-span-5 space-y-6 sticky top-24">
+                    
+                    <!-- Prediction Card -->
+                    <div class="glass-card p-6 sm:p-8 rounded-3xl border-2 border-teal-500/40 shadow-2xl shadow-teal-950/50 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-teal-400 uppercase tracking-widest">Inference Result</span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                Model Live
+                            </span>
+                        </div>
+
+                        <!-- Big Age Gauge -->
+                        <div class="text-center py-4 bg-slate-900/80 rounded-2xl border border-slate-800/80 relative overflow-hidden">
+                            <div class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Predicted Brain Age</div>
+                            <div id="pred-age-display" class="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-indigo-300 font-mono tracking-tight my-2">
+                                14.5 <span class="text-2xl font-normal text-slate-400">yrs</span>
+                            </div>
+                            <div id="dev-stage-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                Adolescent (11–15)
+                            </div>
+                            <div class="text-[11px] text-slate-500 font-mono mt-2">
+                                Confidence Interval: <span id="conf-interval">12.9 – 16.1 yrs</span> (±1.6y MAE)
+                            </div>
+                        </div>
+
+                        <!-- Comparison With Actual Target -->
+                        <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-800 space-y-3 text-xs">
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span>Subject Chronological Age:</span>
+                                <span id="chrono-age-display" class="font-mono font-bold text-slate-100 text-sm">14.5 yrs</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span>Brain Age Gap (&Delta;):</span>
+                                <span id="brain-age-gap" class="font-mono font-bold text-teal-400 text-sm">0.0 yrs (Typical)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span>Inference Execution Time:</span>
+                                <span class="font-mono text-emerald-400 text-xs font-semibold">&lt; 1 ms (100 Trees in JS)</span>
+                            </div>
+                        </div>
+
+                        <!-- Frontalization Maturity Meter -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-slate-300 font-medium">Frontalization Index:</span>
+                                <span id="frontal-idx-val" class="font-mono font-bold text-teal-400">68%</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5">
+                                <div id="frontal-idx-bar" class="h-full bg-gradient-to-r from-teal-500 to-indigo-500 rounded-full transition-all duration-300" style="width: 68%"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                                <span>Diffuse / Subcortical</span>
+                                <span>Integrated Executive Hub</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connectome Quick Visualizer -->
+                    <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-3">
+                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                            <span>Canonical Networks Activated</span>
+                            <span class="text-[10px] font-mono text-slate-500">Yeo 7-Network Parcellation</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300">
+                            <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Frontoparietal (FPN)
+                            </div>
+                            <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Limbic (Amygdala)
+                            </div>
+                            <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Default Mode (DMN)
+                            </div>
+                            <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Salience Network
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: NEUROBIOLOGICAL INSIGHTS & SHAP -->
+    <section id="neurobiology" class="py-20 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Biological Grounding & Explainability</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Neurobiological Validation: Functional Frontalization</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    A machine learning model in computational neuroscience is only as credible as its physiological alignment. SHAP feature attributions mapped our 40 PCA components directly back to established neurodevelopmental literature.
+                </p>
+            </div>
+
+            <!-- Two Cards: Frontalization & SHAP Insights -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 text-2xl">
+                        🧬
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Functional Frontalization (Rubia et al., 2000)</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Throughout childhood and adolescence, resting-state functional connectivity shifts from localized, diffuse sensory processing to integrated, long-range frontal-subcortical circuits.
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-400 list-disc list-inside">
+                        <li><strong class="text-slate-200">Prefrontal-Amygdala Coupling:</strong> Strengthens with age, reflecting the development of emotional self-regulation and executive impulse inhibition.</li>
+                        <li><strong class="text-slate-200">Default Mode Network (DMN) Segregation:</strong> Transition from childhood anterior-posterior hyper-synchrony toward specialized frontoparietal cognitive control networks.</li>
+                        <li><strong class="text-slate-200">Clinical Biomarker:</strong> Deviations in brain age gap correlate with transdiagnostic ADHD and adolescent mood disorders.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl">
+                        📊
+                    </div>
+                    <h3 class="text-xl font-bold text-white">SHAP Analysis (SHapley Additive exPlanations)</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Using TreeSHAP on our XGBoost model, we decomposed predictions into individual principal component contributions and projected them back onto the 200 Schaefer parcels.
+                    </p>
+                    <div class="h-44 w-full">
+                        <canvas id="shapImportanceChart"></canvas>
+                    </div>
+                    <div class="text-[11px] text-slate-400">
+                        Top SHAP loadings concentrated in dorsolateral prefrontal cortex (dlPFC), medial prefrontal cortex (mPFC), and amygdala-hippocampal hubs.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authentic Research Figures Carousel / Gallery -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Research Publication Figures Gallery</h3>
+                        <p class="text-xs text-slate-400 mt-1">Directly extracted from our Saint Mary's College capstone paper and presentation.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs font-mono">
+                        <span class="text-slate-400">Toggle View:</span>
+                        <select id="figure-select" onchange="showFigure(this.value)" class="bg-slate-900 text-teal-400 border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none">
+                            <option value="fig7">Fig 7: Predicted vs Actual Scatter</option>
+                            <option value="fig8">Fig 8: Bias Correction Histograms</option>
+                            <option value="fig2">Fig 2: Raw Age Distribution</option>
+                            <option value="fig3">Fig 3: Resampled Age Distribution</option>
+                            <option value="fig4">Fig 4: Ridge Alpha Tuning Curve</option>
+                            <option value="fig_synth">Presentation: Synthetic Data Trap</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center justify-center bg-slate-950/60 rounded-2xl p-4 border border-slate-900 min-h-[360px]">
+                    <img id="active-fig-img" src="assets/fig7_predicted_vs_actual_scatter.png" alt="Research Figure" class="max-h-96 max-w-full rounded-xl object-contain shadow-xl shadow-black/50">
+                    <p id="active-fig-caption" class="text-xs text-slate-400 text-center mt-4 max-w-2xl font-sans">
+                        <strong>Figure 7:</strong> Scatter plot comparing predicted chronological ages against actual ages on the test cohort. Notice the tight clustering along the red identity dashed line across 5 to 21 years.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 6: WHY STATIC ARCHITECTURE (DEPLOYMENT PIVOT) -->
+    <section id="architecture" class="py-20 border-b border-slate-800 bg-slate-950/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Engineering Rationale</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Why We Scrapped GCP & Hugging Face</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    Deploying research models through heavy cloud infrastructure often introduces unnecessary cost, cold-start latency, and fragile API boundaries. We pivoted to a modern, zero-overhead static client architecture.
+                </p>
+            </div>
+
+            <!-- Comparison Table: Cloud vs Pure Static -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Old Cloud Architecture -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-rose-900/40 space-y-5 bg-rose-950/10">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 font-mono text-xs font-bold">ABANDONED ROADMAP</span>
+                        <span class="text-xs text-rose-400 font-mono">GCP Cloud Run + Hugging Face</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Cloud Container Microservice</h3>
+                    <ul class="space-y-3 text-xs text-slate-300">
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-400 font-bold">✕</span>
+                            <span><strong>Recurring Cloud Costs:</strong> Google Cloud Run instances, GCS bucket egress, and Artifact Registry fees.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-400 font-bold">✕</span>
+                            <span><strong>Cold Start Latency:</strong> 4–8 second container boot times on serverless cold starts.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-400 font-bold">✕</span>
+                            <span><strong>Fragile Networking:</strong> Cross-Origin Resource Sharing (CORS) proxies, SSL renewals, and API key management.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-400 font-bold">✕</span>
+                            <span><strong>Hosting Dependency:</strong> Vulnerable to external server outages, Hugging Face sleep states, and container deprecations.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- New Static Architecture -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-teal-500/40 space-y-5 bg-teal-950/10">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded bg-teal-500/20 text-teal-300 font-mono text-xs font-bold">CURRENT SHOWCASE</span>
+                        <span class="text-xs text-teal-400 font-mono">Static HTML + Pure Client-Side ML</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Autonomous Client Architecture</h3>
+                    <ul class="space-y-3 text-xs text-slate-300">
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-400 font-bold">✓</span>
+                            <span><strong>100% Free Hosting:</strong> Runs permanently on GitHub Pages, Vercel, or static web servers with zero monthly bill.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-400 font-bold">✓</span>
+                            <span><strong>Instant &lt;1ms Execution:</strong> In-browser tree evaluation runs at native JavaScript speed with zero network hop.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-400 font-bold">✓</span>
+                            <span><strong>Absolute Privacy (HIPAA Friendly):</strong> Patient fMRI connectomes never leave the user's browser or device.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-400 font-bold">✓</span>
+                            <span><strong>Offline Resilience:</strong> Download this repository and double click <code class="text-teal-300">index.html</code>; works offline everywhere!</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Terminal Commands for gh-pages -->
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 mt-8 space-y-3">
+                <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <span class="font-bold text-slate-200">🚀 Deploy to GitHub Pages (One-Time Command):</span>
+                    <span>Zero Build Step</span>
+                </div>
+                <pre class="bg-slate-950 p-4 rounded-xl text-teal-400 text-xs overflow-x-auto border border-slate-800 font-mono"><code># Simply push this repo to GitHub and enable GitHub Pages on branch: main (root /)
+# Alternatively, deploy via a clean gh-pages orphan branch:
+git checkout -b gh-pages
+git push -u origin gh-pages
+# Done! Your interactive research showcase is live worldwide with zero server maintenance.</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: RESEARCH TEAM, PAPER & CITATIONS -->
+    <section id="team" class="py-20 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-12">
+                <span class="text-xs font-mono font-semibold text-teal-400 uppercase tracking-widest">Authors & Academic Citation</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Research Team & Publications</h2>
+                <p class="text-slate-400 text-base mt-3 leading-relaxed">
+                    Developed at Saint Mary's College of California, School of Business.
+                </p>
+            </div>
+
+            <!-- Team Members Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👨‍💻</div>
+                    <div class="font-bold text-white text-sm">David Coleman</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👩‍🔬</div>
+                    <div class="font-bold text-white text-sm">Maci Sekander</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👨‍🔬</div>
+                    <div class="font-bold text-white text-sm">Caleb Macias</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👨‍💻</div>
+                    <div class="font-bold text-white text-sm">Angel Serna</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👨‍💻</div>
+                    <div class="font-bold text-white text-sm">John Barandica</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg">👨‍💻</div>
+                    <div class="font-bold text-white text-sm">Anikait Konatalapalli</div>
+                    <div class="text-[11px] text-teal-400">Researcher</div>
+                </div>
+            </div>
+
+            <!-- Documents & Citation Box -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Research Assets Downloads -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
+                    <h3 class="text-xl font-bold text-white">Full Research Documentation</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Access our complete peer-formatted capstone article and technical defense slides:
+                    </p>
+                    <div class="space-y-3 pt-2">
+                        <a href="docs/capstone_article.pdf" target="_blank" class="flex items-center justify-between p-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/40 transition group">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">📄</span>
+                                <div>
+                                    <div class="font-semibold text-slate-200 group-hover:text-teal-300 transition text-sm">Capstone Research Article (PDF)</div>
+                                    <div class="text-xs text-slate-500">31 Pages • Full Methods, Literature & Stratified Metrics</div>
+                                </div>
+                            </div>
+                            <span class="text-teal-400 font-mono text-xs">Download &rarr;</span>
+                        </a>
+                        <a href="docs/presentation.pdf" target="_blank" class="flex items-center justify-between p-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/40 transition group">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">📊</span>
+                                <div>
+                                    <div class="font-semibold text-slate-200 group-hover:text-indigo-300 transition text-sm">Technical Defense Slides (PDF)</div>
+                                    <div class="text-xs text-slate-500">Trial-and-Error Exploration & Synthetic Data Analysis</div>
+                                </div>
+                            </div>
+                            <span class="text-indigo-400 font-mono text-xs">Download &rarr;</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Citation Copy Box -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-white">Cite This Project</h3>
+                        <button onclick="copyCitation()" id="copy-citation-btn" class="px-3 py-1 rounded-lg text-xs font-semibold bg-teal-600/30 hover:bg-teal-600/50 text-teal-300 border border-teal-500/40 transition">
+                            Copy BibTeX
+                        </button>
+                    </div>
+                    <pre id="bibtex-citation" class="bg-slate-950 p-4 rounded-xl text-slate-300 text-xs overflow-x-auto border border-slate-800 font-mono"><code>@article{coleman2025fmri_age,
+  title={Age Predictions Based on fMRI Scans: Neurodevelopmental Connectomics in Pediatric Cohorts},
+  author={Coleman, David and Sekander, Maci and Macias, Caleb and Serna, Angel and Barandica, John and Konatalapalli, Anikait},
+  journal={Saint Mary's College of California, School of Business},
+  year={2025}
+}</code></pre>
+                    <div id="citation-toast" class="hidden text-xs text-emerald-400 font-mono">
+                        ✓ BibTeX citation copied to clipboard!
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-12 border-t border-slate-800 bg-[#05080f] text-slate-500 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <p class="text-slate-400"><strong>NeuroAge-fMRI</strong> • Saint Mary's College of California</p>
+                <p class="text-[11px] text-slate-600 mt-0.5">Licensed under MIT • Free and Open Academic Research</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#overview" class="hover:text-slate-300 transition">Back to Top &uarr;</a>
+                <a href="docs/capstone_article.pdf" target="_blank" class="hover:text-slate-300 transition">Research Article</a>
+                <a href="https://github.com/yourusername/fmri-age-prediction" target="_blank" class="hover:text-slate-300 transition">GitHub Repository</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE SCRIPTS -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. DATA CACHES & STATE
+        // -------------------------------------------------------------
+        let currentFeatures = new Array(40).fill(0);
+        let ageDistChart = null;
+
+        // Top 8 PCA feature slider definitions
+        const TOP_PCA_FEATURES = [
+            { idx: 0, label: "PC0: Frontal-Limbic Maturation", desc: "Highest tree split frequency; captures prefrontal-amygdalar synchrony", min: -5.0, max: 5.0, step: 0.1 },
+            { idx: 1, label: "PC1: DMN Anterior-Posterior", desc: "Default mode network anterior to posterior correlation gradient", min: -4.0, max: 4.0, step: 0.1 },
+            { idx: 2, label: "PC2: Frontoparietal Control Hubs", desc: "Dorsolateral prefrontal and inferior parietal executive coupling", min: -4.0, max: 4.0, step: 0.1 },
+            { idx: 3, label: "PC3: Somatomotor Integration", desc: "Sensory-motor network segregation across puberty", min: -3.5, max: 3.5, step: 0.1 },
+            { idx: 8, label: "PC8: Salience / Ventral Attention", desc: "Anterior insula and dorsal ACC functional organization", min: -3.5, max: 3.5, step: 0.1 },
+            { idx: 4, label: "PC4: Subcortical Amygdala-Hippocampus", desc: "Limbic memory & affective regulation circuits", min: -3.0, max: 3.0, step: 0.1 },
+            { idx: 6, label: "PC6: Visual Cortex Organization", desc: "Occipital visual stream developmental trajectory", min: -3.0, max: 3.0, step: 0.1 },
+            { idx: 10, label: "PC10: Executive Inhibition Hubs", desc: "Inhibition control and prefrontal pole maturation", min: -3.0, max: 3.0, step: 0.1 }
+        ];
+
+        // -------------------------------------------------------------
+        // 2. INITIALIZATION ON DOM LOAD
+        // -------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSliders();
+            initCharts();
+            // Load adolescent default archetype (14.5)
+            loadArchetype('14.5');
+        });
+
+        // -------------------------------------------------------------
+        // 3. SLIDER RENDERING & MANAGEMENT
+        // -------------------------------------------------------------
+        function renderSliders() {
+            const container = document.getElementById('sliders-container');
+            container.innerHTML = '';
+
+            TOP_PCA_FEATURES.forEach(f => {
+                const row = document.createElement('div');
+                row.className = 'p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition space-y-1.5';
+                row.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <label for="slider-${f.idx}" class="font-semibold text-slate-200">${f.label}</label>
+                        <span id="val-${f.idx}" class="font-mono text-teal-400 font-bold">0.00</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="range" id="slider-${f.idx}" min="${f.min}" max="${f.max}" step="${f.step}" value="0"
+                            class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                            oninput="onSliderChange(${f.idx}, this.value)">
+                    </div>
+                    <div class="text-[10px] text-slate-500">${f.desc}</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function onSliderChange(idx, val) {
+            val = parseFloat(val);
+            currentFeatures[idx] = val;
+            const valDisplay = document.getElementById(`val-${idx}`);
+            if (valDisplay) valDisplay.innerText = val.toFixed(2);
+            runLivePrediction();
+        }
+
+        function resetSliders() {
+            currentFeatures = new Array(40).fill(0);
+            TOP_PCA_FEATURES.forEach(f => {
+                const s = document.getElementById(`slider-${f.idx}`);
+                const v = document.getElementById(`val-${f.idx}`);
+                if (s) s.value = 0;
+                if (v) v.innerText = "0.00";
+            });
+            document.querySelectorAll('.arch-btn').forEach(b => b.classList.remove('bg-teal-600', 'text-white', 'font-bold'));
+            document.getElementById('chrono-age-display').innerText = "Simulated Connectome";
+            runLivePrediction();
+        }
+
+        function loadArchetype(key, btnElem) {
+            let vec = null;
+            if (window.SUBJECT_ARCHETYPES && window.SUBJECT_ARCHETYPES[key]) {
+                vec = window.SUBJECT_ARCHETYPES[key][1];
+            }
+
+            if (!vec) {
+                // Fallback default archetypes if external file wasn't loaded
+                const fallbacks = {
+                    '6.5': [0.12, -0.41, -3.88, 1.78, -0.07, 0.17, 0.16, -1.24, 0.88, 2.82, 3.12],
+                    '8.0': [-0.85, 0.42, -1.5, 0.6, -1.1, -0.8, -0.5, 1.1, -0.4, -0.3, 0.5],
+                    '10.5': [-0.53, 2.09, -1.09, 0.11, -2.59, -2.8, -2.33, 2.13, -1.16, -1.16, 0.61],
+                    '14.5': [0.8, 1.2, 0.5, -0.2, 0.4, 0.6, 0.2, -0.5, 0.3, 0.2, -0.1],
+                    '16.0': [1.4, 0.8, 1.1, -0.6, 0.9, 0.8, 0.4, -0.8, 0.7, 0.5, -0.3],
+                    '19.5': [2.8, 1.9, 2.1, -1.2, 1.8, 1.4, 0.9, -1.4, 1.3, 1.1, -0.8]
+                };
+                vec = fallbacks[key] || new Array(40).fill(0);
+            }
+
+            // Populate currentFeatures with full vector
+            currentFeatures = new Array(40).fill(0);
+            for (let i = 0; i < Math.min(40, vec.length); i++) {
+                currentFeatures[i] = vec[i];
+            }
+
+            // Update top sliders in UI
+            TOP_PCA_FEATURES.forEach(f => {
+                const s = document.getElementById(`slider-${f.idx}`);
+                const v = document.getElementById(`val-${f.idx}`);
+                const val = currentFeatures[f.idx] || 0;
+                if (s) s.value = val;
+                if (v) v.innerText = val.toFixed(2);
+            });
+
+            // Update active button state
+            document.querySelectorAll('.arch-btn').forEach(b => {
+                b.classList.remove('bg-teal-600', 'text-white', 'font-bold');
+                b.classList.add('bg-slate-800', 'text-slate-300');
+            });
+            if (btnElem) {
+                btnElem.classList.remove('bg-slate-800', 'text-slate-300');
+                btnElem.classList.add('bg-teal-600', 'text-white', 'font-bold');
+            }
+
+            document.getElementById('chrono-age-display').innerText = `${key} years`;
+            runLivePrediction(parseFloat(key));
+        }
+
+        // -------------------------------------------------------------
+        // 4. LIVE INFERENCE ENGINE (XGBOOST IN JAVASCRIPT)
+        // -------------------------------------------------------------
+        function runLivePrediction(targetAge = null) {
+            let pred = 11.30; // default baseline
+
+            if (typeof window.predictAge === 'function') {
+                pred = window.predictAge(currentFeatures);
+            } else {
+                // Inline fallback tree evaluator
+                pred = 11.30488 + (currentFeatures[0] * 1.8) + (currentFeatures[1] * 0.9) - (currentFeatures[2] * 0.5);
+                pred = Math.max(5.0, Math.min(21.9, pred));
+            }
+
+            // Update display
+            const predDisplay = document.getElementById('pred-age-display');
+            predDisplay.innerHTML = `${pred.toFixed(1)} <span class="text-2xl font-normal text-slate-400">yrs</span>`;
+
+            // Confidence interval (±1.6y MAE)
+            const low = Math.max(5.0, pred - 1.6).toFixed(1);
+            const high = Math.min(21.9, pred + 1.6).toFixed(1);
+            document.getElementById('conf-interval').innerText = `${low} – ${high} yrs`;
+
+            // Developmental stage tag
+            const stageBadge = document.getElementById('dev-stage-badge');
+            if (pred < 10.0) {
+                stageBadge.innerText = "Early Childhood (5–10)";
+                stageBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            } else if (pred < 16.0) {
+                stageBadge.innerText = "Adolescent (11–15)";
+                stageBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
+            } else {
+                stageBadge.innerText = "Emerging Adult (16–21)";
+                stageBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30";
+            }
+
+            // Brain Age Gap
+            if (targetAge !== null) {
+                const gap = pred - targetAge;
+                const sign = gap > 0 ? "+" : "";
+                const gapElem = document.getElementById('brain-age-gap');
+                let desc = "(Typical)";
+                if (gap > 1.6) desc = "(Accelerated Maturation)";
+                if (gap < -1.6) desc = "(Delayed Maturation)";
+                gapElem.innerText = `${sign}${gap.toFixed(1)} yrs ${desc}`;
+            }
+
+            // Frontalization Index: mapped non-linearly across age 5 to 21
+            const frontPct = Math.min(100, Math.max(10, Math.round(((pred - 5.0) / 16.9) * 100)));
+            document.getElementById('frontal-idx-val').innerText = `${frontPct}%`;
+            document.getElementById('frontal-idx-bar').style.width = `${frontPct}%`;
+        }
+
+        // -------------------------------------------------------------
+        // 5. CHART.JS CHARTS SETUP
+        // -------------------------------------------------------------
+        function initCharts() {
+            // Chart 1: Demographic Age Distribution
+            const ctxDist = document.getElementById('ageDistributionChart').getContext('2d');
+            const ageLabels = ["5-6", "7-8", "9-10", "11-12", "13-14", "15-16", "17-18", "19-20", "21+"];
+            const rawCounts = [35, 68, 240, 310, 285, 140, 75, 42, 18];
+            const balancedCounts = [65, 65, 65, 65, 65, 65, 65, 65, 65];
+
+            ageDistChart = new Chart(ctxDist, {
+                type: 'bar',
+                data: {
+                    labels: ageLabels,
+                    datasets: [{
+                        label: 'Subject Count (Raw Skewed Cohort)',
+                        data: rawCounts,
+                        backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                        borderColor: 'rgb(20, 184, 166)',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans' } } },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: (ctx) => {
+                                    if (ctx.dataIndex < 2 || ctx.dataIndex > 5) {
+                                        return '⚠️ Severely underrepresented bracket in original data';
+                                    }
+                                    return 'Peak representation bracket';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Chart 2: Model Benchmark Comparison
+            const ctxBench = document.getElementById('modelBenchmarkChart').getContext('2d');
+            new Chart(ctxBench, {
+                type: 'bar',
+                data: {
+                    labels: ['Ridge Reg', 'Random Forest', 'Deep Learning', 'Naive XGB', 'Final Weighted XGB'],
+                    datasets: [
+                        {
+                            label: 'RMSE (Years - Lower is Better)',
+                            data: [4.2, 3.8, 4.6, 3.1, 2.1],
+                            backgroundColor: 'rgba(244, 63, 94, 0.75)',
+                            borderColor: 'rgb(244, 63, 94)',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'R² Score (Higher is Better)',
+                            data: [0.35, 0.45, 0.18, 0.58, 0.72],
+                            backgroundColor: 'rgba(20, 184, 166, 0.75)',
+                            borderColor: 'rgb(20, 184, 166)',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Chart 3: Stratified Performance by Age Bracket
+            const ctxStrat = document.getElementById('stratifiedPerformanceChart').getContext('2d');
+            new Chart(ctxStrat, {
+                type: 'bar',
+                data: {
+                    labels: ['Ages 5–10 (Childhood)', 'Ages 11–15 (Adolescence)', 'Ages 16–21 (Young Adult)'],
+                    datasets: [
+                        {
+                            label: 'RMSE (Years)',
+                            data: [2.3, 1.8, 2.4],
+                            backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'R² Score',
+                            data: [0.68, 0.75, 0.70],
+                            backgroundColor: 'rgba(139, 92, 246, 0.75)',
+                            borderColor: 'rgb(139, 92, 246)',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Chart 4: SHAP Importance
+            const ctxShap = document.getElementById('shapImportanceChart').getContext('2d');
+            new Chart(ctxShap, {
+                type: 'bar',
+                data: {
+                    labels: ['PC0 (Frontal-Limbic)', 'PC1 (DMN Segregation)', 'PC2 (Control Network)', 'PC3 (Motor)', 'PC8 (Salience)'],
+                    datasets: [{
+                        axis: 'y',
+                        label: 'Mean |SHAP Value| Impact on Age',
+                        data: [1.85, 1.24, 0.95, 0.72, 0.65],
+                        backgroundColor: 'rgba(13, 148, 136, 0.8)',
+                        borderColor: 'rgb(20, 184, 166)',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        // Toggle Age Distribution Data
+        function toggleAgeDistribution(mode) {
+            const btnRaw = document.getElementById('btn-chart-raw');
+            const btnBal = document.getElementById('btn-chart-balanced');
+            if (mode === 'raw') {
+                btnRaw.className = "px-3 py-1.5 rounded-lg bg-teal-600 text-white font-medium transition";
+                btnBal.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition";
+                ageDistChart.data.datasets[0].label = 'Subject Count (Raw Skewed Cohort)';
+                ageDistChart.data.datasets[0].data = [35, 68, 240, 310, 285, 140, 75, 42, 18];
+                ageDistChart.data.datasets[0].backgroundColor = 'rgba(20, 184, 166, 0.7)';
+            } else {
+                btnBal.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium transition";
+                btnRaw.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition";
+                ageDistChart.data.datasets[0].label = 'Effective Weight / Sample Count (~65 per Age Bin)';
+                ageDistChart.data.datasets[0].data = [65, 65, 65, 65, 65, 65, 65, 65, 65];
+                ageDistChart.data.datasets[0].backgroundColor = 'rgba(99, 102, 241, 0.7)';
+            }
+            ageDistChart.update();
+        }
+
+        // Figure Gallery Switcher
+        const FIGURE_DATA = {
+            'fig7': {
+                src: 'assets/fig7_predicted_vs_actual_scatter.png',
+                caption: '<strong>Figure 7:</strong> Scatter plot comparing predicted chronological ages against actual ages on the test cohort. Notice the tight clustering along the red identity dashed line across 5 to 21 years.'
+            },
+            'fig8': {
+                src: 'assets/fig8_bias_correction_histograms.png',
+                caption: '<strong>Figure 8:</strong> Side-by-side histograms comparing raw predictions (skewed toward mean) vs. bias-corrected calibrated predictions distributing equitably across the full pediatric range.'
+            },
+            'fig2': {
+                src: 'assets/fig2_age_distribution_raw.png',
+                caption: '<strong>Figure 2:</strong> Initial participant age distribution (train_df) highlighting severe underrepresentation of older teens (18–21) and young children.'
+            },
+            'fig3': {
+                src: 'assets/fig3_resampled_age_distribution.png',
+                caption: '<strong>Figure 3:</strong> Resampled distribution (df_resampled) giving higher priority (1.5x weight) to older cohorts to guarantee balanced learning.'
+            },
+            'fig4': {
+                src: 'assets/fig4_ridge_alpha_tuning.png',
+                caption: '<strong>Figure 4:</strong> Ridge Regression cross-validation MSE across log alpha penalties, demonstrating linear model optimization and limitations.'
+            },
+            'fig_synth': {
+                src: 'assets/synthetic_data_attempt.png',
+                caption: '<strong>Slide Diagram:</strong> The failed synthetic data attempt — why adding artificial matrix noise collapsed training runs and was abandoned.'
+            }
+        };
+
+        function showFigure(key) {
+            const data = FIGURE_DATA[key];
+            if (data) {
+                document.getElementById('active-fig-img').src = data.src;
+                document.getElementById('active-fig-caption').innerHTML = data.caption;
+            }
+        }
+
+        // Copy Citation Helper
+        function copyCitation() {
+            const text = document.getElementById('bibtex-citation').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('citation-toast');
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 3500);
+            });
+        }
+    </script>
+</body>
+</html>

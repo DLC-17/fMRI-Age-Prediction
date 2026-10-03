@@ -3,6 +3,11 @@ data/
 *.zip
 __pycache__/
 .pytest_cache/
-*.json
+*.db
+*.sqlite
+mlflow.db
+mlruns/
 GEMINI.md
+*.json
 !xgboost_fmri.json
+!assets/archetypes.json

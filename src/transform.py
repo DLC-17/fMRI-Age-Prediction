@@ -2,9 +2,10 @@ import numpy as np
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
 
-def apply_pca(X_train, X_test, n_components=100):
+def apply_pca(X_train, X_test, n_components=40):
     """
     Applies PCA to the training data and transforms both train and test data.
+    Defaults to 40 principal components (explaining 90% variance per research findings).
     """
     pca = PCA(n_components=n_components)
     X_train_pca = pca.fit_transform(X_train)
